@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func
 from src.config.database import get_db
+from src.config.settings import ROTATION_BATCH_SIZE
 from src.middlewares.auth import current_user
 from src.models import Dataset, Job, Report, Audit
 from src.services.business import metadata
 router=APIRouter()
 @router.get('/meta')
-def meta():return metadata()
+def meta():
+    return {**metadata(), 'rotation_batch_size': ROTATION_BATCH_SIZE}
 @router.get('/overview')
 def overview(db=Depends(get_db),user=Depends(current_user)):
     return {'datasets':db.scalar(select(func.count()).select_from(Dataset)), 'records':sum(len(d.records) for d in db.scalars(select(Dataset))), 'jobs':db.scalar(select(func.count()).select_from(Job)), 'approved':db.scalar(select(func.count()).select_from(Job).where(Job.approved==True)), 'reports':db.scalar(select(func.count()).select_from(Report))}

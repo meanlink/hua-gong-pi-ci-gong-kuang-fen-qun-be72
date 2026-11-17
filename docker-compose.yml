@@ -34,8 +34,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-batch-clusters-development-only}
       SEED_DEMO: ${SEED_DEMO:-true}
       ARTIFACT_DIR: /artifacts
+      # 密钥环独立挂载：密钥材料绝不与业务数据库或产物放在同一卷
+      KEYRING_DIR: /keyring
+      ROTATION_BATCH_SIZE: ${ROTATION_BATCH_SIZE:-20}
     ports: ["${BACKEND_PORT:-19209}:8000"]
-    volumes: ["analysis-artifacts:/artifacts"]
+    volumes:
+      - "analysis-artifacts:/artifacts"
+      - "keyring-data:/keyring"
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -50,7 +55,9 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-batch-clusters}-worker
     command: ["python", "-m", "src.worker"]
     environment: *app-env
-    volumes: ["analysis-artifacts:/artifacts"]
+    volumes:
+      - "analysis-artifacts:/artifacts"
+      - "keyring-data:/keyring"
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -75,3 +82,4 @@ volumes:
   db-data:
   redis-data:
   analysis-artifacts:
+  keyring-data:
